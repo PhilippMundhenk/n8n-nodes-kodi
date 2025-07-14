@@ -1,0 +1,19 @@
+{
+	"node": "n8n-nodes-kodi.Kodi",
+	"nodeVersion": "1.0",
+	"codexVersion": "1.0",
+	"categories": ["Utility"],
+	"resources": {
+		"credentialDocumentation": [
+			{
+				"url": "https://github.com/PhilippMundhenk/n8n-nodes-kodi"
+			}
+		],
+		"primaryDocumentation": [
+			{
+				"url": "https://github.com/PhilippMundhenk/n8n-nodes-kodi"
+			}
+		]
+	},
+	"alias": ["Kodi"]
+}
