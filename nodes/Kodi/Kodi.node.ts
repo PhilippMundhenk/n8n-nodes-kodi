@@ -23,7 +23,7 @@ export class Kodi implements INodeType {
 		},
 		credentials: [
 			{
-				name: 'KodiApi',
+				name: 'kodiApi',
 				required: true,
 			},
 		],
