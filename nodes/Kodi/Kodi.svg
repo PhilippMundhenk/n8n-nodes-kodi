@@ -6,8 +6,8 @@
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    xml:space="preserve"
-   enable-background="new 0 0 612 792"
-   viewBox="0 0 560.56488 600.60962"
+   enable-background="new 0 0 200 200"
+   viewBox="0 0 200 200"
    height="200"
    width="200"
    y="0px"
@@ -19,7 +19,6 @@
          rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title></cc:Work></rdf:RDF></metadata><defs
    id="defs31" />
 <g
-   transform="translate(-28.538111,-69.457375)"
    id="g20">
 	<path
    style="clip-rule:evenodd;fill:#31afe1;fill-rule:evenodd"
