@@ -79,7 +79,7 @@ export class Kodi implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 
 		try {
-			const credentials = await this.getCredentials('KodiApi') as unknown as KodiCredentials;
+			const credentials = await this.getCredentials('kodiApi') as unknown as KodiCredentials;
 			const host = credentials.host;
 			const port = credentials.port;
 			const username = credentials.username;
