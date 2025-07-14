@@ -15,7 +15,7 @@ export class Kodi implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"]}}',
 		description: 'Control Kodi',
-		icon: 'file:Kodi.svg',
+		icon: 'file:Kodi.png',
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
 		defaults: {
