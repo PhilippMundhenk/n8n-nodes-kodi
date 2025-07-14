@@ -1,15 +1,15 @@
 {
   "name": "n8n-nodes-kodi",
   "version": "0.1.0",
-  "description": "",
+  "description": "A node to control Kodi",
   "keywords": [
     "n8n-community-node-package"
   ],
   "license": "MIT",
-  "homepage": "",
+  "homepage": "https://github.com/PhilippMundhenk/n8n-nodes-kodi",
   "author": {
-    "name": "",
-    "email": ""
+    "name": "Philipp Mundhenk",
+    "email": "contact@mundhenk.org"
   },
   "repository": {
     "type": "git",

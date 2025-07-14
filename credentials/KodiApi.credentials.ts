@@ -4,8 +4,9 @@ import {
 } from 'n8n-workflow';
 
 export class KodiApi implements ICredentialType {
-	name = 'KodiApi';
+	name = 'kodiApi';
 	displayName = 'Kodi API';
+        documentationUrl = 'https://github.com/PhilippMundhenk/n8n-nodes-kodi';
 	properties: INodeProperties[] = [
 		{
 			displayName: 'Server',
@@ -36,7 +37,7 @@ export class KodiApi implements ICredentialType {
 			displayName: 'Port',
 			name: 'port',
 			type: 'number',
-			default: 445,
+			default: 8080,
 		},
 	];
 }
