@@ -19,7 +19,7 @@ export class KodiApi implements ICredentialType {
 			displayName: 'User Name',
 			name: 'username',
 			type: 'string',
-			required: true,
+			required: false,
 			default: '',
 		},
 		{
@@ -30,7 +30,7 @@ export class KodiApi implements ICredentialType {
 				password: true,
 			},
 			noDataExpression: true,
-			required: true,
+			required: false,
 			default: '',
 		},
 		{

@@ -84,8 +84,13 @@ export class Kodi implements INodeType {
 			const port = credentials.port;
 			const username = credentials.username;
 			const password = credentials.password;
-
-			const url = "http://"+username+":"+password+"@"+host+":"+port+"/jsonrpc";
+			
+			if (username.trim().length > 0 && password.trim().length > 0) {
+				const url = "http://"+username+":"+password+"@"+host+":"+port+"/jsonrpc";
+			}
+			else {
+				const url = "http://"+host+":"+port+"/jsonrpc";
+			}
 
 			const payload = {
 				jsonrpc: "2.0",
