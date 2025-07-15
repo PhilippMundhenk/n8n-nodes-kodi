@@ -37,7 +37,7 @@ export class Kodi implements INodeType {
 						name: 'Update/Scan',
 						value: 'Scan',
 						description: 'Update/Scan library',
-						action: 'Update/Scan library',
+						action: 'Update / scan library',
 					},
 					{
 						name: 'Clean',
