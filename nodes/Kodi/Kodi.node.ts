@@ -45,6 +45,12 @@ export class Kodi implements INodeType {
 						description: 'Clean library',
 						action: 'Clean library',
 					},
+					{
+						name: 'Raw',
+						value: 'Raw',
+						description: 'Provide raw JSON-RPC',
+						action: 'Call raw JSON-RPC',
+					},
 				],
 				default: 'Scan',
 				noDataExpression: true,
@@ -70,12 +76,18 @@ export class Kodi implements INodeType {
 				default: 'VideoLibrary',
 				noDataExpression: true,
 			},
+			{
+				displayName: 'Raw JSON',
+				name: 'payload',
+				type: 'string',
+				noDataExpression: false,
+				default: '{ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "mybash"}'
+			},
 		],
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const operation = this.getNodeParameter('operation', 0) as string;
-		const library = this.getNodeParameter('library', 0) as string;
 		const returnData: INodeExecutionData[] = [];
 
 		try {
@@ -84,29 +96,39 @@ export class Kodi implements INodeType {
 			const port = credentials.port;
 			const username = credentials.username;
 			const password = credentials.password;
+			let url = "";
+			let payload = "";
 			
 			if (username.trim().length > 0 && password.trim().length > 0) {
-				const url = "http://"+username+":"+password+"@"+host+":"+port+"/jsonrpc";
+				url = "http://"+username+":"+password+"@"+host+":"+port+"/jsonrpc";
 			}
 			else {
-				const url = "http://"+host+":"+port+"/jsonrpc";
+				url = "http://"+host+":"+port+"/jsonrpc";
 			}
 
-			const payload = {
-				jsonrpc: "2.0",
-				method: library+"."+operation,
-				id: "mybash"
-			};
+			if (operation === "Scan" || operation === "Clean") {
+				const library = this.getNodeParameter('library', 0) as string;
+				payload = JSON.stringify({
+					jsonrpc: "2.0",
+					method: library+"."+operation,
+					id: "mybash"
+				});
+
+			}
+			else if (operation === "Raw") {
+				payload = this.getNodeParameter('payload', 0) as string;
+			}
 
 			await fetch(url, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify(payload)  // Convert payload to JSON string
+				body: payload
 			});
 
 			return [returnData];
+
 		} catch (error) {
 			throw error;
 		}
