@@ -34,10 +34,10 @@ export class Kodi implements INodeType {
 				type: 'options',
 				options: [
 					{
-						name: 'Update',
+						name: 'Update/Scan',
 						value: 'Scan',
-						description: 'Update library',
-						action: 'Update library',
+						description: 'Update/Scan library',
+						action: 'Update/Scan library',
 					},
 					{
 						name: 'Clean',
@@ -59,6 +59,11 @@ export class Kodi implements INodeType {
 				displayName: 'Library',
 				name: 'library',
 				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['Scan', 'Clean'],
+					},
+				},
 				options: [
 					{
 						name: 'Video',
@@ -79,6 +84,11 @@ export class Kodi implements INodeType {
 			{
 				displayName: 'Raw JSON',
 				name: 'payload',
+				displayOptions: {
+					show: {
+						operation: ['Raw'],
+					},
+				},
 				type: 'string',
 				noDataExpression: false,
 				default: '{ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "mybash"}'
