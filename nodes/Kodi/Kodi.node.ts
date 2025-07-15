@@ -2,10 +2,12 @@ import {
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	type INodeType,
+	type IDataObject,
 	type INodeTypeDescription,
         NodeConnectionType,
 } from 'n8n-workflow';
 import fetch from 'node-fetch';
+//import * as KodiTypes from './kodi';
 
 export class Kodi implements INodeType {
 	description: INodeTypeDescription = {
@@ -46,6 +48,12 @@ export class Kodi implements INodeType {
 						action: 'Clean library',
 					},
 					{
+						name: 'Get',
+						value: 'Get',
+						description: 'Get data from Kodi',
+						action: 'Get data from kodi',
+					},
+					{
 						name: 'Raw',
 						value: 'Raw',
 						description: 'Provide raw JSON-RPC',
@@ -61,7 +69,7 @@ export class Kodi implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['Scan', 'Clean'],
+						operation: ['Scan', 'Clean', 'Get'],
 					},
 				},
 				options: [
@@ -79,6 +87,56 @@ export class Kodi implements INodeType {
 					},
 				],
 				default: 'VideoLibrary',
+				noDataExpression: true,
+			},
+			{
+				displayName: 'Get Type',
+				name: 'type',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['Get'],
+					},
+				},
+				options: [
+					{
+						name: 'Albums',
+						value: 'GetAlbums',
+						description: 'Get albums (Audio only)',
+						action: 'Get albums (Audio only)',
+					},
+					{
+						name: 'Artists',
+						value: 'GetArtists',
+						description: 'Get artists (Audio only)',
+						action: 'Get artists (Audio only)',
+					},
+					{
+						name: 'Movies',
+						value: 'GetMovies',
+						description: 'Get movies (Video only)',
+						action: 'Get movies (Video only)',
+					},
+					{
+						name: 'Music Videos',
+						value: 'GetMusicVideos',
+						description: 'Get music videos (Video only)',
+						action: 'Get music videos (Video only)',
+					},
+					{
+						name: 'Songs',
+						value: 'GetSongs',
+						description: 'Get songs (Audio only)',
+						action: 'Get songs (Audio only)',
+					},
+					{
+						name: 'TV Shows',
+						value: 'GetTVShows',
+						description: 'Get TV shows (Video only)',
+						action: 'Get TV shows (Video only)',
+					},
+				],
+				default: 'GetMovies',
 				noDataExpression: true,
 			},
 			{
@@ -128,8 +186,17 @@ export class Kodi implements INodeType {
 			else if (operation === "Raw") {
 				payload = this.getNodeParameter('payload', 0) as string;
 			}
+			else if (operation === "Get") {
+				const library = this.getNodeParameter('library', 0) as string;
+				const type = this.getNodeParameter('type', 0) as string;
+				payload = JSON.stringify({
+					jsonrpc: "2.0",
+					method: library+"."+type,
+					id: "mybash"
+				});
+			}
 
-			await fetch(url, {
+			const response = await fetch(url, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -137,10 +204,48 @@ export class Kodi implements INodeType {
 				body: payload
 			});
 
+			const body = await response.json() as JsonRPC;
+			let returnVal;
+			if (operation === "Get") {
+				const type = this.getNodeParameter('type', 0) as string;
+				// TODO: Allow for raw output
+				if (type === "GetMovies") {
+					let result = body.result as MoviesResult
+					let movies = result["movies"] as Movie[];
+					for (const m of movies) {
+						returnData.push({ json: m as unknown as IDataObject });	
+					}
+				}
+			}
+			else {
+				returnVal = body;
+				returnData.push({ json: returnVal as unknown as IDataObject });
+			}
 			return [returnData];
 
 		} catch (error) {
 			throw error;
 		}
 	}
+}
+
+interface Movie {
+  label: string;
+  movieid: number;
+}
+
+interface Result {
+  [key: string]: unknown;
+  limits: unknown;
+}
+
+interface MoviesResult extends Result {
+  movies: Movie[];
+  limits: unknown;
+}
+
+interface JsonRPC {
+  id: string;
+  jsonrpc: string;
+  result: Result;
 }

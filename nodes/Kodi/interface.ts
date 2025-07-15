@@ -4,3 +4,4 @@ interface KodiCredentials {
 	username: string;
 	password: string;
 }
+
