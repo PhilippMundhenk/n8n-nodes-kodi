@@ -216,6 +216,10 @@ export class Kodi implements INodeType {
 						returnData.push({ json: m as unknown as IDataObject });	
 					}
 				}
+				else {
+					returnVal = body;
+					returnData.push({ json: returnVal as unknown as IDataObject });			
+				}
 			}
 			else {
 				returnVal = body;
