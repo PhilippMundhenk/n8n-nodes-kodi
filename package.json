@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-kodi",
-  "version": "0.1.62-dev",
+  "version": "0.1.63-dev",
   "description": "A powerful n8n node for controlling Kodi with dynamic JSON-RPC method discovery",
   "keywords": [
     "n8n-community-node-package"

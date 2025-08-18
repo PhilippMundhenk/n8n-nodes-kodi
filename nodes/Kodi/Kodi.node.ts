@@ -60,7 +60,7 @@ export class Kodi implements INodeType {
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Method Category',
+				displayName: 'Method Category Name or ID',
 				name: 'methodCategory',
 				type: 'options',
 				displayOptions: {
@@ -76,7 +76,7 @@ export class Kodi implements INodeType {
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Method Name',
+				displayName: 'Method Name or ID',
 				name: 'method',
 				type: 'options',
 				displayOptions: {
