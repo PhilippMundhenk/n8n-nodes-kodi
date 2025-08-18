@@ -4,20 +4,22 @@ import {
 	type INodeType,
 	type IDataObject,
 	type INodeTypeDescription,
-        NodeConnectionType,
+	type INodePropertyOptions,
+	type ILoadOptionsFunctions,
+	NodeConnectionType,
+	NodeOperationError,
 } from 'n8n-workflow';
-import fetch from 'node-fetch';
-//import * as KodiTypes from './kodi';
+import { KodiService } from './KodiService';
 
 export class Kodi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kodi',
-		name: 'Kodi',
+		name: 'kodi',
 		group: ['transform'],
-		version: 1,
+		version: 2,
 		subtitle: '={{$parameter["operation"]}}',
-		description: 'Control Kodi',
-		icon: 'file:Kodi.png',
+		description: 'Control Kodi with dynamic method discovery',
+		icon: 'file:Kodi.svg',
 		inputs: [NodeConnectionType.Main],
 		outputs: [NodeConnectionType.Main],
 		defaults: {
@@ -36,122 +38,159 @@ export class Kodi implements INodeType {
 				type: 'options',
 				options: [
 					{
-						name: 'Update/Scan',
-						value: 'Scan',
-						description: 'Update/Scan library',
-						action: 'Update / scan library',
+						name: 'Execute Method',
+						value: 'execute',
+						description: 'Execute a Kodi JSON-RPC method',
+						action: 'Execute a kodi method',
 					},
 					{
-						name: 'Clean',
-						value: 'Clean',
-						description: 'Clean library',
-						action: 'Clean library',
+						name: 'Raw JSON-RPC',
+						value: 'raw',
+						description: 'Execute raw JSON-RPC command',
+						action: 'Execute raw JSON-RPC',
 					},
 					{
-						name: 'Get',
-						value: 'Get',
-						description: 'Get data from Kodi',
-						action: 'Get data from kodi',
-					},
-					{
-						name: 'Raw',
-						value: 'Raw',
-						description: 'Provide raw JSON-RPC',
-						action: 'Call raw JSON-RPC',
+						name: 'Discover Methods',
+						value: 'discover',
+						description: 'Discover available methods from Kodi',
+						action: 'Discover available methods',
 					},
 				],
-				default: 'Scan',
+				default: 'execute',
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Library',
-				name: 'library',
+				displayName: 'Method Category Name or ID',
+				name: 'methodCategory',
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['Scan', 'Clean', 'Get'],
+						operation: ['execute'],
 					},
 				},
-				options: [
-					{
-						name: 'Video',
-						value: 'VideoLibrary',
-						description: 'Video library',
-						action: 'Video library',
-					},
-					{
-						name: 'Audio',
-						value: 'AudioLibrary',
-						description: 'Audio library',
-						action: 'Audio library',
-					},
-				],
-				default: 'VideoLibrary',
+				typeOptions: {
+					loadOptionsMethod: 'getMethodCategories',
+				},
+				default: '',
+				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Get Type',
-				name: 'type',
+				displayName: 'Method Name or ID',
+				name: 'method',
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['Get'],
+						operation: ['execute'],
 					},
 				},
-				options: [
-					{
-						name: 'Albums',
-						value: 'GetAlbums',
-						description: 'Get albums (Audio only)',
-						action: 'Get albums (Audio only)',
-					},
-					{
-						name: 'Artists',
-						value: 'GetArtists',
-						description: 'Get artists (Audio only)',
-						action: 'Get artists (Audio only)',
-					},
-					{
-						name: 'Movies',
-						value: 'GetMovies',
-						description: 'Get movies (Video only)',
-						action: 'Get movies (Video only)',
-					},
-					{
-						name: 'Music Videos',
-						value: 'GetMusicVideos',
-						description: 'Get music videos (Video only)',
-						action: 'Get music videos (Video only)',
-					},
-					{
-						name: 'Songs',
-						value: 'GetSongs',
-						description: 'Get songs (Audio only)',
-						action: 'Get songs (Audio only)',
-					},
-					{
-						name: 'TV Shows',
-						value: 'GetTVShows',
-						description: 'Get TV shows (Video only)',
-						action: 'Get TV shows (Video only)',
-					},
-				],
-				default: 'GetMovies',
+				typeOptions: {
+					loadOptionsMethod: 'getMethods',
+					loadOptionsDependsOn: ['methodCategory'],
+				},
+				default: '',
+				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Raw JSON',
-				name: 'payload',
+				displayName: 'Parameters',
+				name: 'parameters',
+				type: 'json',
 				displayOptions: {
 					show: {
-						operation: ['Raw'],
+						operation: ['execute'],
 					},
 				},
-				type: 'string',
+				default: '{}',
+				description: 'Parameters to pass to the method (JSON format)',
 				noDataExpression: false,
-				default: '{ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "mybash"}'
+			},
+			{
+				displayName: 'Raw JSON-RPC',
+				name: 'rawPayload',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['raw'],
+					},
+				},
+				default: '{ "jsonrpc": "2.0", "method": "VideoLibrary.Scan", "id": "n8n" }',
+				description: 'Raw JSON-RPC payload to send to Kodi',
+				noDataExpression: false,
+			},
+			{
+				displayName: 'Options',
+				name: 'options',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				options: [
+					{
+						displayName: 'Force Method Discovery',
+						name: 'forceDiscovery',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to force rediscovery of available methods',
+					},
+					{
+						displayName: 'Include Method Info',
+						name: 'includeMethodInfo',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to include method information in the output',
+					},
+				],
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			async getMethodCategories(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const credentials = await this.getCredentials('kodiApi');
+				if (!credentials) {
+					return [];
+				}
+
+				try {
+					const kodiService = new KodiService(credentials as any);
+					await kodiService.discoverMethods();
+					const categories = kodiService.getMethodsByCategory();
+					
+					return Object.keys(categories).map(category => ({
+						name: category,
+						value: category,
+						description: `${categories[category].length} methods available`,
+					}));
+				} catch (error) {
+					return [];
+				}
+			},
+
+			async getMethods(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const credentials = await this.getCredentials('kodiApi');
+				const methodCategory = this.getCurrentNodeParameter('methodCategory') as string;
+				
+				if (!credentials || !methodCategory) {
+					return [];
+				}
+
+				try {
+					const kodiService = new KodiService(credentials as any);
+					await kodiService.discoverMethods();
+					const categories = kodiService.getMethodsByCategory();
+					const methods = categories[methodCategory] || [];
+					
+					return methods.map(method => ({
+						name: method.name,
+						value: method.name,
+						description: method.description || '',
+					}));
+				} catch (error) {
+					return [];
+				}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -159,97 +198,121 @@ export class Kodi implements INodeType {
 		const returnData: INodeExecutionData[] = [];
 
 		try {
-			const credentials = await this.getCredentials('kodiApi') as unknown as KodiCredentials;
-			const host = credentials.host;
-			const port = credentials.port;
-			const username = credentials.username;
-			const password = credentials.password;
-			let url = "";
-			let payload = "";
-			
-			if (username.trim().length > 0 && password.trim().length > 0) {
-				url = "http://"+username+":"+password+"@"+host+":"+port+"/jsonrpc";
-			}
-			else {
-				url = "http://"+host+":"+port+"/jsonrpc";
+			const credentials = await this.getCredentials('kodiApi') as any;
+			const kodiService = new KodiService(credentials);
+			const options = this.getNodeParameter('options', 0, {}) as IDataObject;
+
+			// Force discovery if requested
+			if (options.forceDiscovery) {
+				await kodiService.discoverMethods();
 			}
 
-			if (operation === "Scan" || operation === "Clean") {
-				const library = this.getNodeParameter('library', 0) as string;
-				payload = JSON.stringify({
-					jsonrpc: "2.0",
-					method: library+"."+operation,
-					id: "mybash"
-				});
+			let result: any;
 
-			}
-			else if (operation === "Raw") {
-				payload = this.getNodeParameter('payload', 0) as string;
-			}
-			else if (operation === "Get") {
-				const library = this.getNodeParameter('library', 0) as string;
-				const type = this.getNodeParameter('type', 0) as string;
-				payload = JSON.stringify({
-					jsonrpc: "2.0",
-					method: library+"."+type,
-					id: "mybash"
-				});
-			}
-
-			const response = await fetch(url, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: payload
-			});
-
-			const body = await response.json() as JsonRPC;
-			let returnVal;
-			if (operation === "Get") {
-				const type = this.getNodeParameter('type', 0) as string;
-				// TODO: Allow for raw output
-				if (type === "GetMovies") {
-					let result = body.result as MoviesResult
-					let movies = result["movies"] as Movie[];
-					for (const m of movies) {
-						returnData.push({ json: m as unknown as IDataObject });	
+			if (operation === 'execute') {
+				const method = this.getNodeParameter('method', 0) as string;
+				const parameters = this.getNodeParameter('parameters', 0, {}) as any;
+				
+				// Parse parameters if they're a string
+				let parsedParams = parameters;
+				if (typeof parameters === 'string') {
+					try {
+						parsedParams = JSON.parse(parameters);
+					} catch (error) {
+						throw new NodeOperationError(this.getNode(), 'Invalid JSON in parameters field');
 					}
 				}
-				else {
-					returnVal = body;
-					returnData.push({ json: returnVal as unknown as IDataObject });			
-				}
-			}
-			else {
-				returnVal = body;
-				returnData.push({ json: returnVal as unknown as IDataObject });
-			}
-			return [returnData];
 
+				result = await kodiService.executeMethod(method, parsedParams);
+
+				// Include method info if requested
+				if (options.includeMethodInfo) {
+					const methods = await kodiService.discoverMethods();
+					const methodInfo = methods.find(m => m.name === method);
+					if (methodInfo) {
+						result = {
+							method: methodInfo,
+							result: result,
+						};
+					}
+				}
+			} else if (operation === 'raw') {
+				const rawPayload = this.getNodeParameter('rawPayload', 0) as string;
+				
+				let payload: any;
+				try {
+					payload = JSON.parse(rawPayload);
+				} catch (error) {
+					throw new NodeOperationError(this.getNode(), 'Invalid JSON in raw payload');
+				}
+
+				// Validate JSON-RPC format
+				if (!payload.jsonrpc || !payload.method || !payload.id) {
+					throw new NodeOperationError(this.getNode(), 'Invalid JSON-RPC format. Must include jsonrpc, method, and id fields.');
+				}
+
+				result = await kodiService.makeRequest(payload);
+				if (result.error) {
+					throw new NodeOperationError(this.getNode(), `Kodi error: ${result.error.message} (code: ${result.error.code})`);
+				}
+				result = result.result;
+			} else if (operation === 'discover') {
+				const methods = await kodiService.discoverMethods();
+				const categories = kodiService.getMethodsByCategory();
+				
+				result = {
+					totalMethods: methods.length,
+					categories: Object.keys(categories).map(category => ({
+						name: category,
+						methodCount: categories[category].length,
+						methods: categories[category],
+					})),
+					allMethods: methods,
+				};
+			}
+
+			// Handle different result types
+			if (result && typeof result === 'object') {
+				if (Array.isArray(result)) {
+					// If result is an array, create separate items
+					for (const item of result) {
+						returnData.push({ json: item as IDataObject });
+					}
+				} else {
+					// If result is an object, check for common Kodi result structures
+					if (result.movies) {
+						for (const movie of result.movies) {
+							returnData.push({ json: movie as IDataObject });
+						}
+					} else if (result.tvshows) {
+						for (const show of result.tvshows) {
+							returnData.push({ json: show as IDataObject });
+						}
+					} else if (result.albums) {
+						for (const album of result.albums) {
+							returnData.push({ json: album as IDataObject });
+						}
+					} else if (result.artists) {
+						for (const artist of result.artists) {
+							returnData.push({ json: artist as IDataObject });
+						}
+					} else if (result.songs) {
+						for (const song of result.songs) {
+							returnData.push({ json: song as IDataObject });
+						}
+					} else {
+						// Default case: return the entire result
+						returnData.push({ json: result as IDataObject });
+					}
+				}
+			} else {
+				// Handle primitive results
+				returnData.push({ json: { result } as IDataObject });
+			}
+
+			return [returnData];
 		} catch (error) {
-			throw error;
+			throw new NodeOperationError(this.getNode(), (error as Error).message);
 		}
 	}
-}
-
-interface Movie {
-  label: string;
-  movieid: number;
-}
-
-interface Result {
-  [key: string]: unknown;
-  limits: unknown;
-}
-
-interface MoviesResult extends Result {
-  movies: Movie[];
-  limits: unknown;
-}
-
-interface JsonRPC {
-  id: string;
-  jsonrpc: string;
-  result: Result;
 }

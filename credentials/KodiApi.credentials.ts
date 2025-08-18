@@ -39,5 +39,24 @@ export class KodiApi implements ICredentialType {
 			type: 'number',
 			default: 8080,
 		},
+		{
+			displayName: 'Enable Method Discovery',
+			name: 'enableDiscovery',
+			type: 'boolean',
+			default: true,
+			description: 'Automatically discover available JSON-RPC methods from Kodi',
+		},
+		{
+			displayName: 'Discovery Timeout (ms)',
+			name: 'discoveryTimeout',
+			type: 'number',
+			default: 5000,
+			description: 'Timeout for method discovery in milliseconds',
+			displayOptions: {
+				show: {
+					enableDiscovery: [true],
+				},
+			},
+		},
 	];
 }
