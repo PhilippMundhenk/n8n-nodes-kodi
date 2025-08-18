@@ -60,7 +60,7 @@ export class Kodi implements INodeType {
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Method Category Name or ID',
+				displayName: 'Method Category',
 				name: 'methodCategory',
 				type: 'options',
 				displayOptions: {
@@ -76,7 +76,7 @@ export class Kodi implements INodeType {
 				noDataExpression: true,
 			},
 			{
-				displayName: 'Method Name or ID',
+				displayName: 'Method Name',
 				name: 'method',
 				type: 'options',
 				displayOptions: {
@@ -91,19 +91,6 @@ export class Kodi implements INodeType {
 				default: '',
 				description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 				noDataExpression: true,
-			},
-			{
-				displayName: 'Parameters',
-				name: 'parameters',
-				type: 'json',
-				displayOptions: {
-					show: {
-						operation: ['execute'],
-					},
-				},
-				default: '{}',
-				description: 'Parameters to pass to the method (JSON format)',
-				noDataExpression: false,
 			},
 			{
 				displayName: 'Raw JSON-RPC',
@@ -157,13 +144,29 @@ export class Kodi implements INodeType {
 					await kodiService.discoverMethods();
 					const categories = kodiService.getMethodsByCategory();
 					
-					return Object.keys(categories).map(category => ({
-						name: category,
-						value: category,
-						description: `${categories[category].length} methods available`,
-					}));
+					// Add "All" option at the beginning
+					const options = [
+						{
+							name: 'All',
+							value: 'All',
+							description: 'Show all available methods',
+						},
+						...Object.keys(categories).map(category => ({
+							name: category,
+							value: category,
+							description: `${categories[category].length} methods available`,
+						}))
+					];
+					
+					return options;
 				} catch (error) {
-					return [];
+					return [
+						{
+							name: 'All',
+							value: 'All',
+							description: 'Show all available methods',
+						}
+					];
 				}
 			},
 
@@ -171,7 +174,7 @@ export class Kodi implements INodeType {
 				const credentials = await this.getCredentials('kodiApi');
 				const methodCategory = this.getCurrentNodeParameter('methodCategory') as string;
 				
-				if (!credentials || !methodCategory) {
+				if (!credentials) {
 					return [];
 				}
 
@@ -179,7 +182,14 @@ export class Kodi implements INodeType {
 					const kodiService = new KodiService(credentials as any);
 					await kodiService.discoverMethods();
 					const categories = kodiService.getMethodsByCategory();
-					const methods = categories[methodCategory] || [];
+					
+					let methods: any[] = [];
+					if (methodCategory === 'All') {
+						// If "All" is selected, flatten all methods from all categories
+						methods = Object.values(categories).flat();
+					} else if (methodCategory && categories[methodCategory]) {
+						methods = categories[methodCategory];
+					}
 					
 					return methods.map(method => ({
 						name: method.name,
@@ -211,19 +221,8 @@ export class Kodi implements INodeType {
 
 			if (operation === 'execute') {
 				const method = this.getNodeParameter('method', 0) as string;
-				const parameters = this.getNodeParameter('parameters', 0, {}) as any;
 				
-				// Parse parameters if they're a string
-				let parsedParams = parameters;
-				if (typeof parameters === 'string') {
-					try {
-						parsedParams = JSON.parse(parameters);
-					} catch (error) {
-						throw new NodeOperationError(this.getNode(), 'Invalid JSON in parameters field');
-					}
-				}
-
-				result = await kodiService.executeMethod(method, parsedParams);
+				result = await kodiService.executeMethod(method);
 
 				// Include method info if requested
 				if (options.includeMethodInfo) {
