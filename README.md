@@ -95,7 +95,7 @@ This node supports the full Kodi JSON-RPC API as documented at:
 
 ## Version History
 
-### v2.0.0
+### v0.2.0
 - Complete rewrite with dynamic method discovery
 - Programmatic approach instead of declarative
 - Automatic method loading from Kodi instances
@@ -103,7 +103,7 @@ This node supports the full Kodi JSON-RPC API as documented at:
 - Advanced raw JSON-RPC support
 - SVG icon replacement
 
-### v1.x
+### v0.1.x
 - Original declarative implementation
 - Basic library operations
 - Simple method execution
