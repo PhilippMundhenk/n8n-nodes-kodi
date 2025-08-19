@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-kodi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A powerful n8n community node for controlling Kodi media center through JSON-RPC API with intelligent method discovery and comprehensive media management capabilities",
   "keywords": [
     "n8n-community-node-package",

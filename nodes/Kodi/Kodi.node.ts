@@ -27,7 +27,7 @@ export class Kodi implements INodeType {
 		displayName: 'Kodi',
 		name: 'kodi',
 		group: ['transform'],
-		version: 2,
+		version: 3,
 		subtitle: '={{$parameter["operation"]}}',
 		description: 'Control Kodi with dynamic method discovery',
 		icon: 'file:Kodi.svg',

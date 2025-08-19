@@ -226,6 +226,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ---
 
-**Version**: 0.2.0  
+**Version**: 0.3.0  
 **Last Updated**: August 2025  
 **Maintainer**: Philipp Mundhenk
