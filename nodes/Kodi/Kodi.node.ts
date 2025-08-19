@@ -11,6 +11,17 @@ import {
 } from 'n8n-workflow';
 import { KodiService } from './KodiService';
 
+/**
+ * Kodi n8n Node - Provides comprehensive control over Kodi media center
+ * 
+ * This node implements three main operations:
+ * 1. Execute Method: Run specific Kodi JSON-RPC methods with dynamic discovery
+ * 2. Raw JSON-RPC: Send custom JSON-RPC commands for advanced users
+ * 3. Discover Methods: Automatically find available methods from Kodi instance
+ * 
+ * The node automatically discovers available methods from the connected Kodi instance
+ * using JSON-RPC introspection, with fallback to predefined common methods.
+ */
 export class Kodi implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Kodi',
@@ -131,8 +142,17 @@ export class Kodi implements INodeType {
 		],
 	};
 
+	/**
+	 * LoadOptions methods provide dynamic dropdown options for the UI
+	 * These methods are called by n8n to populate the method selection dropdowns
+	 */
 	methods = {
 		loadOptions: {
+			/**
+			 * Loads available method categories from Kodi
+			 * Categories are automatically discovered from the Kodi instance
+			 * @returns Array of method categories with counts
+			 */
 			async getMethodCategories(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const credentials = await this.getCredentials('kodiApi');
 				if (!credentials) {
@@ -144,7 +164,7 @@ export class Kodi implements INodeType {
 					await kodiService.discoverMethods();
 					const categories = kodiService.getMethodsByCategory();
 					
-					// Add "All" option at the beginning
+					// Add "All" option at the beginning for convenience
 					const options = [
 						{
 							name: 'All',
@@ -160,6 +180,7 @@ export class Kodi implements INodeType {
 					
 					return options;
 				} catch (error) {
+					// Return basic "All" option if discovery fails
 					return [
 						{
 							name: 'All',
@@ -170,6 +191,11 @@ export class Kodi implements INodeType {
 				}
 			},
 
+			/**
+			 * Loads available methods based on selected category
+			 * If "All" is selected, shows methods from all categories
+			 * @returns Array of available methods with descriptions
+			 */
 			async getMethods(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const credentials = await this.getCredentials('kodiApi');
 				const methodCategory = this.getCurrentNodeParameter('methodCategory') as string;
@@ -203,6 +229,11 @@ export class Kodi implements INodeType {
 		},
 	};
 
+	/**
+	 * Main execution method - called by n8n when the node runs
+	 * Handles all three operations: execute, raw, and discover
+	 * @returns Array of execution results
+	 */
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const operation = this.getNodeParameter('operation', 0) as string;
 		const returnData: INodeExecutionData[] = [];
@@ -212,19 +243,21 @@ export class Kodi implements INodeType {
 			const kodiService = new KodiService(credentials);
 			const options = this.getNodeParameter('options', 0, {}) as IDataObject;
 
-			// Force discovery if requested
+			// Force discovery if requested by user
 			if (options.forceDiscovery) {
 				await kodiService.discoverMethods();
 			}
 
 			let result: any;
 
+			// Handle different operations
 			if (operation === 'execute') {
+				// Execute a specific Kodi method
 				const method = this.getNodeParameter('method', 0) as string;
 				
 				result = await kodiService.executeMethod(method);
 
-				// Include method info if requested
+				// Include method info if requested by user
 				if (options.includeMethodInfo) {
 					const methods = await kodiService.discoverMethods();
 					const methodInfo = methods.find(m => m.name === method);
@@ -236,6 +269,7 @@ export class Kodi implements INodeType {
 					}
 				}
 			} else if (operation === 'raw') {
+				// Execute raw JSON-RPC command
 				const rawPayload = this.getNodeParameter('rawPayload', 0) as string;
 				
 				let payload: any;
@@ -256,6 +290,7 @@ export class Kodi implements INodeType {
 				}
 				result = result.result;
 			} else if (operation === 'discover') {
+				// Discover available methods from Kodi
 				const methods = await kodiService.discoverMethods();
 				const categories = kodiService.getMethodsByCategory();
 				
@@ -270,7 +305,7 @@ export class Kodi implements INodeType {
 				};
 			}
 
-			// Handle different result types
+			// Process and format the results for n8n output
 			if (result && typeof result === 'object') {
 				if (Array.isArray(result)) {
 					// If result is an array, create separate items
@@ -279,6 +314,7 @@ export class Kodi implements INodeType {
 					}
 				} else {
 					// If result is an object, check for common Kodi result structures
+					// and split them into individual items for better workflow processing
 					if (result.movies) {
 						for (const movie of result.movies) {
 							returnData.push({ json: movie as IDataObject });
@@ -305,12 +341,13 @@ export class Kodi implements INodeType {
 					}
 				}
 			} else {
-				// Handle primitive results
+				// Handle primitive results (strings, numbers, booleans)
 				returnData.push({ json: { result } as IDataObject });
 			}
 
 			return [returnData];
 		} catch (error) {
+			// Convert any errors to n8n NodeOperationError for proper error handling
 			throw new NodeOperationError(this.getNode(), (error as Error).message);
 		}
 	}
